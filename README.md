@@ -13,7 +13,16 @@ An interactive Dash application for exploring rental listings in central London.
 * Summary cards showing total listings, number matching your filters, average price, and average distance  
 * Price distribution histogram for the currently filtered properties  
 * Paginated table view with clickable links that open the original listing in a new tab  
-* Narrative text block summarising the current filter selection and results  
+* Narrative text block summarising the current filter selection and results
+
+---
+
+## Demo video
+
+A short video demonstration of the dashboard is included in the repository.  
+It shows the full workflow including filter usage, map interaction, distance selection, and navigation through the listings table.  
+
+You can use it to get a quick overview of how the interface behaves before running the application yourself.
 
 ---
 
