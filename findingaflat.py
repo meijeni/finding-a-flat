@@ -648,7 +648,10 @@ app.layout = html.Div([
     }),
     
     # Hidden div to store distance data
-    dcc.Store(id='distance-data')
+    dcc.Store(id='distance-data'),
+    
+    # Add Location component for opening URLs
+    dcc.Location(id='url-redirect', refresh=False)
     
 ], style={
     'fontFamily': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -810,36 +813,25 @@ def update_dashboard(bedrooms, bathrooms, price_range, distance_data, max_distan
     else:
         narrative += "Try adjusting your filters to see more results. 🔧"
     
-    # Main map with updated styling and clickable links
+    # Main map with clickable markers
     if filtered_count > 0:
-        # Prepare custom hover text with clickable links
         filtered_df_map = filtered_df.copy()
         
-        # Create custom hover template
-        hover_template = '<b>Price:</b> £%{customdata[0]:,.0f}<br>'
-        hover_template += '<b>Bedrooms:</b> %{customdata[1]}<br>'
-        hover_template += '<b>Bathrooms:</b> %{customdata[2]}<br>'
-        hover_template += '<b>Distance:</b> %{customdata[3]:.2f} km<br>'
-        
-        if 'area' in filtered_df_map.columns:
-            hover_template += '<b>Area:</b> %{customdata[4]}<br>'
-            custom_data_cols = ['price', 'bedrooms', 'bathrooms', 'distance_km', 'area']
-        else:
-            custom_data_cols = ['price', 'bedrooms', 'bathrooms', 'distance_km']
-        
-        # Add URL to custom data if available
-        if 'url' in filtered_df_map.columns:
-            hover_template += '<b>Click to view property</b><extra></extra>'
-            custom_data_cols.append('url')
-        else:
-            hover_template += '<extra></extra>'
-        
-        # Prepare custom data
-        custom_data = filtered_df_map[custom_data_cols].values
+        # Create hover text
+        hover_texts = []
+        for idx, row in filtered_df_map.iterrows():
+            hover_text = f"<b>Price:</b> £{row['price']:,.0f}<br>"
+            hover_text += f"<b>Bedrooms:</b> {row['bedrooms']}<br>"
+            hover_text += f"<b>Bathrooms:</b> {row['bathrooms']}<br>"
+            hover_text += f"<b>Distance:</b> {row['distance_km']:.2f} km<br>"
+            if 'area' in row and pd.notna(row['area']):
+                hover_text += f"<b>Area:</b> {row['area']}<br>"
+            hover_text += "<b>Click to view property</b>"
+            hover_texts.append(hover_text)
         
         map_fig = go.Figure()
         
-        # Add property markers
+        # Add property markers with URLs in customdata
         map_fig.add_trace(go.Scattermap(
             lat=filtered_df_map['latitude'],
             lon=filtered_df_map['longitude'],
@@ -851,8 +843,9 @@ def update_dashboard(bedrooms, bathrooms, price_range, distance_data, max_distan
                 showscale=True,
                 colorbar=dict(title="Price (£)")
             ),
-            customdata=custom_data,
-            hovertemplate=hover_template,
+            text=hover_texts,
+            hovertemplate='%{text}<extra></extra>',
+            customdata=filtered_df_map['url'].values if 'url' in filtered_df_map.columns else None,
             name='Properties'
         ))
         
@@ -879,20 +872,21 @@ def update_dashboard(bedrooms, bathrooms, price_range, distance_data, max_distan
             ),
             margin={"r": 0, "t": 50, "l": 0, "b": 0},
             height=550,
-            title='🗺️ Property Locations',
+            title='🗺️ Property Locations (Click markers to view listings)',
             title_font_size=20,
             title_font_family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto',
             title_font_color='#1a1a2e',
             font=dict(family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto'),
-            showlegend=False
+            showlegend=False,
+            clickmode='event+select'
         )
         
-        # Add click event handling via JavaScript
-        if 'url' in filtered_df_map.columns:
-            map_fig.update_traces(
-                selector=dict(name='Properties'),
-                customdata=custom_data
-            )
+        # Add JavaScript to handle clicks and open URLs
+        map_fig.update_layout(
+            updatemenus=[],
+            annotations=[]
+        )
+        
     else:
         map_fig = go.Figure()
         map_fig.add_annotation(
@@ -1110,6 +1104,26 @@ def update_dashboard(bedrooms, bathrooms, price_range, distance_data, max_distan
         prev_disabled,
         next_disabled
     )
+
+# Add clientside callback to handle map clicks and open URLs
+app.clientside_callback(
+    """
+    function(clickData) {
+        if (clickData && clickData.points && clickData.points.length > 0) {
+            var point = clickData.points[0];
+            if (point.customdata) {
+                var url = point.customdata;
+                if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                    window.open(url, '_blank');
+                }
+            }
+        }
+        return '';
+    }
+    """,
+    Output('url-redirect', 'href'),
+    Input('main-map', 'clickData')
+)
 
 # Run the app
 if __name__ == '__main__':
