@@ -50,7 +50,7 @@ app.layout = html.Div([
         html.H1("🏠 London Rental Finder", 
                 style={
                     'textAlign': 'center', 
-                    'color': '#1a1a2e', 
+                    'color': 'white', 
                     'marginBottom': '10px', 
                     'fontWeight': '600',
                     'fontSize': '42px',
@@ -59,7 +59,7 @@ app.layout = html.Div([
         html.P("Discover your perfect London flat with interactive maps and smart filters",
                style={
                    'textAlign': 'center', 
-                   'color': '#6c757d', 
+                   'color': 'rgba(255, 255, 255, 0.95)', 
                    'marginBottom': '30px',
                    'fontSize': '16px'
                })
