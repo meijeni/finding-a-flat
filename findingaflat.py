@@ -846,7 +846,9 @@ def update_dashboard(bedrooms, bathrooms, price_range, distance_data, max_distan
             text=hover_texts,
             hovertemplate='%{text}<extra></extra>',
             customdata=filtered_df_map['url'].values if 'url' in filtered_df_map.columns else None,
-            name='Properties'
+            name='Properties',
+            selected=dict(marker=dict(opacity=1)),
+            unselected=dict(marker=dict(opacity=1))
         ))
         
         # Add selected location marker if distance data exists
